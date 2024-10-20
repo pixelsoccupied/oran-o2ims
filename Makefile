@@ -395,3 +395,9 @@ scorecard-test: operator-sdk
 sync-submodules:
 	@echo "Syncing submodules"
 	hack/sync-submodules.sh
+
+##@ O-RAN Alarms Server
+
+.PHONY: run-alarms
+run-alarms: go-generate ##run alarms server locally
+	go run internal/service/alarms/main.go
