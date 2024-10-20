@@ -10,11 +10,9 @@ import (
 	"time"
 )
 
-// TODO: this file most likely can be shared
-
 type Middleware = func(http.Handler) http.Handler
 
-// CreateMwStack a simple helper function to help call
+// CreateMwStack a simple helper function to call
 // middlewares in a chain instead of wrapping them one at a time.
 func CreateMwStack(middlewares ...Middleware) Middleware {
 	return func(next http.Handler) http.Handler {
@@ -39,6 +37,7 @@ func LogDuration() Middleware {
 	}
 }
 
+// AlarmsOapiValidation to validate all incoming requests as specified in the spec
 func AlarmsOapiValidation() Middleware {
 	// This also validates the spec
 	swagger, err := generated.GetSwagger()

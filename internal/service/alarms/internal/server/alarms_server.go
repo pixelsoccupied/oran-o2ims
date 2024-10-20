@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/openshift-kni/oran-o2ims/internal/service/alarms/api/generated"
+	"time"
 )
 
 type AlarmsServer struct {
@@ -36,8 +38,22 @@ func (a AlarmsServer) GetAlarms(ctx context.Context, request generated.GetAlarms
 }
 
 func (a AlarmsServer) GetAlarm(ctx context.Context, request generated.GetAlarmRequestObject) (generated.GetAlarmResponseObject, error) {
-	//TODO implement me
-	panic("implement me")
+
+	alrm := generated.AlarmEventRecord{
+		AlarmAcknowledged:     false,
+		AlarmAcknowledgedTime: nil,
+		AlarmChangedTime:      nil,
+		AlarmClearedTime:      nil,
+		AlarmDefinitionId:     uuid.New(),
+		AlarmEventRecordId:    uuid.New(),
+		AlarmRaisedTime:       time.Now(),
+		Extensions:            nil,
+		PerceivedSeverity:     0,
+		ProbableCauseId:       uuid.New(),
+		ResourceId:            uuid.New(),
+	}
+
+	return generated.GetAlarm200JSONResponse(alrm), nil
 }
 
 func (a AlarmsServer) AckAlarm(ctx context.Context, request generated.AckAlarmRequestObject) (generated.AckAlarmResponseObject, error) {
