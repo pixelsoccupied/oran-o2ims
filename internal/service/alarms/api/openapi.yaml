@@ -158,6 +158,23 @@ paths:
           description: Bad request
         '500':
           description: Internal server error
+      callbacks:
+        onAlarmEvent:
+          '{$request.body#/subscriber.callbackUrl}':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/AlarmEventNotification'
+              responses:
+                '200':
+                  description: Callback processed successfully
+                '400':
+                  description: Bad request
+                '500':
+                  description: Internal server error
 
   /O2ims_infrastructureMonitoring/v1/alarmSubscriptions/{alarmSubscriptionId}:
     get:
@@ -267,23 +284,6 @@ paths:
           description: Bad request
         '500':
           description: Internal server error
-      callbacks:
-        onAlarmEvent:
-          '{$request.body#/subscriber.callbackUrl}':
-            post:
-              requestBody:
-                required: true
-                content:
-                  application/json:
-                    schema:
-                      $ref: '#/components/schemas/AlarmEventNotification'
-              responses:
-                '200':
-                  description: Callback processed successfully
-                '400':
-                  description: Bad request
-                '500':
-                  description: Internal server error
 
   /internal/v1/hardware-alerts/{hwVendorName}:
     post:

@@ -1,0 +1,8 @@
+overlay: 1.0.0
+info:
+  title: "Example to indicate how to use the OpenAPI Overlay specification (https://github.com/OAI/Overlay-Specification) and only generate external client-side code"
+  version: 1.0.0
+actions:
+- target: $.paths.*.*[?(@.tags[*] == 'internal')]
+  description: Remove internal endpoints (noted by internal tag)
+  remove: true

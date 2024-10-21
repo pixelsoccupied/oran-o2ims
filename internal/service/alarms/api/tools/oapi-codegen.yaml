@@ -11,6 +11,6 @@ generate:
 
 output-options:
   skip-fmt: false
-  skip-prune: true
+  skip-prune: false
   nullable-type: true
   name-normalizer: ToCamelCaseWithDigits

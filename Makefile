@@ -399,5 +399,5 @@ sync-submodules:
 ##@ O-RAN Alarms Server
 
 .PHONY: run-alarms
-run-alarms: go-generate ##run alarms server locally
+run-alarms: go-generate ##Run alarms server locally
 	go run internal/service/alarms/main.go
