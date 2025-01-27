@@ -197,6 +197,9 @@ func (ar *AlarmsRepository) UpsertAlarmDefinitions(ctx context.Context, records 
 
 // UpsertAlarmEventRecord insert and updating an AlarmEventRecord.
 func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord) error {
+	if len(records) == 0 {
+		return nil
+	}
 	// Build queries for each record
 	sql, params, err := buildAlarmEventRecordUpsertQuery(records)
 	if err != nil {
@@ -286,23 +289,32 @@ func (ar *AlarmsRepository) GetAlarmDefinitions(ctx context.Context, am *api.Ale
 func getGetAlertNameObjectTypeIDAndSeverity(am *api.AlertmanagerNotification, clusterIDToObjectTypeID map[uuid.UUID]uuid.UUID) []bob.Expression {
 	var b []bob.Expression
 	for _, alert := range am.Alerts {
-		labels := *alert.Labels
-		if id := alertmanager.GetClusterID(labels); id != nil {
-			if objectTypeId, ok := clusterIDToObjectTypeID[*id]; ok {
-				_, severity := alertmanager.GetPerceivedSeverity(labels)
-				b = append(b, psql.ArgGroup(
-					alertmanager.GetAlertName(labels),
-					objectTypeId,
-					severity,
-				))
+		if alert.Labels != nil {
+			labels := *alert.Labels
+			if id := alertmanager.GetClusterID(labels); id != nil {
+				if objectTypeId, ok := clusterIDToObjectTypeID[*id]; ok {
+					_, severity := alertmanager.GetPerceivedSeverity(labels)
+					b = append(b, psql.ArgGroup(
+						alertmanager.GetAlertName(labels),
+						objectTypeId,
+						severity,
+					))
+				}
 			}
 		}
 	}
 	return b
 }
 
+// TimeNow allows test to override time.Now
+var TimeNow = time.Now
+
 // ResolveNotificationIfNotInCurrent find and only keep the alerts that are available in the current payload
 func (ar *AlarmsRepository) ResolveNotificationIfNotInCurrent(ctx context.Context, am *api.AlertmanagerNotification) error {
+	if len(am.Alerts) == 0 {
+		return nil
+	}
+
 	m := models.AlarmEventRecord{}
 	dbTags := utils.GetAllDBTagsFromStruct(m)
 	var (
@@ -323,7 +335,7 @@ func (ar *AlarmsRepository) ResolveNotificationIfNotInCurrent(ctx context.Contex
 	query := psql.Update(
 		um.Table(tableName),
 		um.SetCol(alarmStatus).ToArg(api.Resolved),
-		um.Set(psql.Raw(updateClearedTimeCase, time.Now())),
+		um.Set(psql.Raw(updateClearedTimeCase, TimeNow())),
 		um.SetCol(perceivedSeverity).ToArg(api.CLEARED),
 		um.Where(
 			psql.Group(psql.Quote(fingerprint), psql.Quote(raisedTime)).
