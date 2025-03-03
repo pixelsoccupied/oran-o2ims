@@ -9,6 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/speakeasy-api/openapi-overlay/pkg/loader"
 	"gopkg.in/yaml.v3"
+	"path/filepath"
 )
 
 func LoadSwagger(filePath string) (swagger *openapi3.T, err error) {
@@ -86,6 +87,12 @@ func LoadSwaggerWithOverlay(filePath string, opts LoadSwaggerWithOverlayOpts) (s
 	}
 
 	swagger, err = openapi3.NewLoader().LoadFromData(b)
+	loader := openapi3.NewLoader()
+	loader.IsExternalRefsAllowed = true
+
+	swagger, err = loader.LoadFromDataWithPath(b, &url.URL{
+		Path: filepath.ToSlash(filePath),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to serialize Overlay'd specification %#v: %v", opts.Path, err)
 	}
