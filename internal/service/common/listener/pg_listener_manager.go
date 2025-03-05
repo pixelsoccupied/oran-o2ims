@@ -110,7 +110,7 @@ func (lm *Manager) listenAndProcess(ctx context.Context, channel string, handler
 		slog.Debug("Received notification from PG", "channel", channel, "payload", notification.Payload)
 		// Process the notification payload using the registered handler.
 		if err := handler(ctx, notification); err != nil {
-			slog.Error("Failed to process notification", "channel", channel, "error", err)
+			slog.Error("failed to process notification", "channel", channel, "error", err)
 		}
 	}
 }

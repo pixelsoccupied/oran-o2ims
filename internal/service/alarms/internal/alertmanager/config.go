@@ -149,9 +149,9 @@ func updateRoutes(config map[string]interface{}) {
 	// Create oran route config.
 	oranRoute := map[string]interface{}{
 		"receiver":        OranReceiverName,
-		"group_wait":      "30s",
-		"group_interval":  "1m",
-		"repeat_interval": "4h",
+		"group_wait":      "1s",                              // Almost immediate notification for new alerts
+		"group_interval":  "5s",                              // Quick updates for changed alerts
+		"repeat_interval": "60s",                             // Reasonable re-notification period
 		"matchers":        []string{`alertname!~"Watchdog"`}, // Exclude Watchdog alerts.
 		"continue":        true,                              // Process subsequent routes.
 		// "group_by":        []string{},                        // Empty array groups all alerts together.

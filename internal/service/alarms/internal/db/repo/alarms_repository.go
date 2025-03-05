@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	commonmodels "github.com/openshift-kni/oran-o2ims/internal/service/common/db/models"
 	"github.com/stephenafamo/bob/dialect/psql/dm"
 
@@ -113,29 +115,37 @@ func (ar *AlarmsRepository) GetAlarmSubscription(ctx context.Context, id uuid.UU
 }
 
 // UpsertAlarmEventRecord insert and updating an AlarmEventRecord.
-func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord) error {
+func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64, fullSync bool) error {
 	if len(records) == 0 {
 		slog.Warn("No records for events upsert")
 		return nil // this should never happen but handling it gracefully for tests
 	}
 
-	// Build queries for each record
-	sql, params, err := buildAlarmEventRecordUpsertQuery(records)
-	if err != nil {
-		return fmt.Errorf("failed to build query for event upsert: %w", err)
-	}
+	return pgx.BeginFunc(ctx, ar.Db, func(tx pgx.Tx) error { // nolint: wrapcheck
+		// Build queries for each record
+		sql, params, err := buildAlarmEventRecordUpsertQuery(records, generationID)
+		if err != nil {
+			return fmt.Errorf("failed to build query for event upsert: %w", err)
+		}
 
-	r, err := ar.Db.Exec(ctx, sql, params...)
-	if err != nil {
-		return fmt.Errorf("failed to execute upsert query: %w", err)
-	}
+		_, err = tx.Exec(ctx, sql, params...)
+		if err != nil {
+			return fmt.Errorf("failed to execute upsert query: %w", err)
+		}
 
-	slog.Info("Successfully inserted and updated alerts from alertmanager", "count", r.RowsAffected())
-	return nil
+		if fullSync {
+			if err := resolveNotificationWithStaleGenID(ctx, tx, int(generationID)); err != nil {
+				return fmt.Errorf("failed to resolve notification with stale gen ID: %w", err)
+			}
+		}
+
+		slog.Info("Successfully inserted and updated alerts from alertmanager", "full_sync", fullSync)
+		return nil
+	})
 }
 
 // buildAlarmEventRecordUpsertQuery builds the query for insert and updating an AlarmEventRecord
-func buildAlarmEventRecordUpsertQuery(records []models.AlarmEventRecord) (string, []any, error) {
+func buildAlarmEventRecordUpsertQuery(records []models.AlarmEventRecord, generationID int64) (string, []any, error) {
 	m := models.AlarmEventRecord{}
 	query := psql.Insert(im.Into(m.TableName()))
 
@@ -145,6 +155,7 @@ func buildAlarmEventRecordUpsertQuery(records []models.AlarmEventRecord) (string
 		"AlarmAcknowledged", "PerceivedSeverity", "Extensions",
 		"ObjectID", "ObjectTypeID", "AlarmStatus",
 		"Fingerprint", "AlarmDefinitionID", "ProbableCauseID",
+		"GenerationID",
 	})
 
 	// Set values
@@ -155,13 +166,13 @@ func buildAlarmEventRecordUpsertQuery(records []models.AlarmEventRecord) (string
 			record.AlarmAcknowledged, record.PerceivedSeverity, record.Extensions,
 			record.ObjectID, record.ObjectTypeID, record.AlarmStatus,
 			record.Fingerprint, record.AlarmDefinitionID, record.ProbableCauseID,
+			generationID,
 		)))
 	}
 	query.Apply(values...)
 
 	// Set upsert constraints
-	// Cols here should match manage_alarm_event trigger function.
-	// This will ensure alarm_changed_time, alarm_changed_time, alarm_sequence_number are always updated as long as it has not been previously acked.
+	// Cols here should match manage_alarm_event trigger function as needed to trigger a notification using
 	dbTags := utils.GetAllDBTagsFromStruct(m)
 	query.Apply(im.OnConflictOnConstraint(m.OnConflict()).DoUpdate(
 		im.SetExcluded(dbTags["AlarmStatus"]),
@@ -171,6 +182,8 @@ func buildAlarmEventRecordUpsertQuery(records []models.AlarmEventRecord) (string
 		im.SetExcluded(dbTags["ObjectTypeID"]),
 		im.SetExcluded(dbTags["AlarmDefinitionID"]),
 		im.SetExcluded(dbTags["ProbableCauseID"]),
+		im.SetExcluded(dbTags["GenerationID"]),
+		im.Where(psql.Quote(m.TableName(), dbTags["AlarmSource"]).EQ(psql.Arg("alertmanager"))),
 	))
 
 	return query.Build() //nolint:wrapcheck
@@ -179,23 +192,18 @@ func buildAlarmEventRecordUpsertQuery(records []models.AlarmEventRecord) (string
 // TimeNow allows test to override time.Now
 var TimeNow = time.Now
 
-// ResolveNotificationIfNotInCurrent find and only keep the alerts that are available in the current payload
-func (ar *AlarmsRepository) ResolveNotificationIfNotInCurrent(ctx context.Context, am *api.AlertmanagerNotification) error {
-	if len(am.Alerts) == 0 {
-		slog.Warn("No events to resolve")
-		return nil // this should never happen
-	}
-
+// resolveNotificationWithStaleGenID any generation ID
+func resolveNotificationWithStaleGenID(ctx context.Context, db pgx.Tx, generationID int) error {
 	m := models.AlarmEventRecord{}
 	dbTags := utils.GetAllDBTagsFromStruct(m)
 	var (
 		tableName          = m.TableName()
-		fingerprint        = dbTags["Fingerprint"]
-		raisedTime         = dbTags["AlarmRaisedTime"]
+		generationIDCol    = dbTags["GenerationID"]
 		clearedTime        = dbTags["AlarmClearedTime"]
 		alarmStatus        = dbTags["AlarmStatus"]
 		perceivedSeverity  = dbTags["PerceivedSeverity"]
 		alarmEventRecordID = dbTags["AlarmEventRecordID"]
+		alarmSource        = dbTags["AlarmSource"]
 	)
 
 	updateClearedTimeCase := fmt.Sprintf(
@@ -208,10 +216,8 @@ func (ar *AlarmsRepository) ResolveNotificationIfNotInCurrent(ctx context.Contex
 		um.SetCol(alarmStatus).ToArg(api.Resolved),
 		um.Set(psql.Raw(updateClearedTimeCase, TimeNow())),
 		um.SetCol(perceivedSeverity).ToArg(api.CLEARED),
-		um.Where(
-			psql.Group(psql.Quote(fingerprint), psql.Quote(raisedTime)).
-				NotIn(getGetAlertFingerPrintAndStartAt(am)...),
-		),
+		um.Where(psql.Quote(generationIDCol).LT(psql.Arg(generationID))),
+		um.Where(psql.Quote(alarmSource).EQ(psql.Arg("alertmanager"))),
 		um.Returning(psql.Quote(alarmEventRecordID)),
 	)
 
@@ -219,24 +225,15 @@ func (ar *AlarmsRepository) ResolveNotificationIfNotInCurrent(ctx context.Contex
 	if err != nil {
 		return fmt.Errorf("failed to build AlarmEventRecord update query when processing AM notification: %w", err)
 	}
-	records, err := utils.ExecuteCollectRows[models.AlarmEventRecord](ctx, ar.Db, sql, params)
+	records, err := utils.ExecuteCollectRows[models.AlarmEventRecord](ctx, db, sql, params)
 	if err != nil {
 		return err
 	}
 
 	if len(records) > 0 {
-		slog.Info("Successfully resolved alarms that no longer exist", "records", len(records))
+		slog.Info("Successfully resolved alarms stale alerts", "records", len(records))
 	}
 	return nil
-}
-
-func getGetAlertFingerPrintAndStartAt(am *api.AlertmanagerNotification) []bob.Expression {
-	b := make([]bob.Expression, 0, len(am.Alerts))
-	for _, alert := range am.Alerts {
-		b = append(b, psql.ArgGroup(alert.Fingerprint, alert.StartsAt))
-	}
-
-	return b
 }
 
 // UpdateSubscriptionEventCursor update a given subscription event cursor with a alarm sequence value

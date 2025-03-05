@@ -211,9 +211,10 @@ func Serve(config *api.AlarmsServerConfig) error {
 		}
 	}()
 
-	// Configure AM right before the server starts listening
-	if err := alertmanager.Setup(ctx); err != nil {
-		return fmt.Errorf("error configuring alert manager: %w", err)
+	// Configure webhook and init DB with CaaS alerts using AM right before the server starts listening
+	// Also start alert sync scheduler
+	if err := startAlertmanager(ctx, &alarmServer); err != nil {
+		return fmt.Errorf("failed to start alartmanager: %w", err)
 	}
 
 	// Init server
@@ -314,5 +315,34 @@ func ConfigAlarmServerCleanup(ctx context.Context, alarmServer *api.AlarmsServer
 	}
 	slog.Info("Successfully created initial set of cronjob and resources")
 
+	return nil
+}
+
+func startAlertmanager(ctx context.Context, alarmServer *api.AlarmsServer) error {
+	hubclient, err := k8s.NewClientForHub()
+	if err != nil {
+		return fmt.Errorf("failed to create k8s client: %w", err)
+	}
+
+	// Run the first sync
+	c := alertmanager.NewAlertManagerClient(hubclient, alarmServer.AlarmsRepository, alarmServer.Infrastructure)
+	slog.Info("Running initial alert sync")
+	if err := c.SyncAlerts(ctx); err != nil {
+		return fmt.Errorf("failed to run initial alert sync: %w", err)
+	}
+
+	// Start alert sync scheduler
+	alarmServer.Wg.Add(1)
+	go func() {
+		defer alarmServer.Wg.Done()
+		if err := c.RunAlertSyncScheduler(ctx, 10*time.Second); err != nil {
+			slog.Error("failed to run alert sync scheduler", "error", err)
+		}
+	}()
+
+	// Configure webhook
+	if err := alertmanager.Setup(ctx); err != nil {
+		return fmt.Errorf("error configuring alert manager: %w", err)
+	}
 	return nil
 }

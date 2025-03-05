@@ -13,7 +13,6 @@ import (
 	reflect "reflect"
 
 	uuid "github.com/google/uuid"
-	generated "github.com/openshift-kni/oran-o2ims/internal/service/alarms/api/generated"
 	models "github.com/openshift-kni/oran-o2ims/internal/service/alarms/internal/db/models"
 	models0 "github.com/openshift-kni/oran-o2ims/internal/service/common/db/models"
 	gomock "go.uber.org/mock/gomock"
@@ -206,20 +205,6 @@ func (mr *MockAlarmRepositoryInterfaceMockRecorder) PatchAlarmEventRecordACK(ctx
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchAlarmEventRecordACK", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).PatchAlarmEventRecordACK), ctx, id, record)
 }
 
-// ResolveNotificationIfNotInCurrent mocks base method.
-func (m *MockAlarmRepositoryInterface) ResolveNotificationIfNotInCurrent(ctx context.Context, am *generated.AlertmanagerNotification) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveNotificationIfNotInCurrent", ctx, am)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ResolveNotificationIfNotInCurrent indicates an expected call of ResolveNotificationIfNotInCurrent.
-func (mr *MockAlarmRepositoryInterfaceMockRecorder) ResolveNotificationIfNotInCurrent(ctx, am any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveNotificationIfNotInCurrent", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).ResolveNotificationIfNotInCurrent), ctx, am)
-}
-
 // UpdateServiceConfiguration mocks base method.
 func (m *MockAlarmRepositoryInterface) UpdateServiceConfiguration(ctx context.Context, id uuid.UUID, record *models.ServiceConfiguration) (*models.ServiceConfiguration, error) {
 	m.ctrl.T.Helper()
@@ -250,15 +235,15 @@ func (mr *MockAlarmRepositoryInterfaceMockRecorder) UpdateSubscriptionEventCurso
 }
 
 // UpsertAlarmEventRecord mocks base method.
-func (m *MockAlarmRepositoryInterface) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord) error {
+func (m *MockAlarmRepositoryInterface) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64, fullSync bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertAlarmEventRecord", ctx, records)
+	ret := m.ctrl.Call(m, "UpsertAlarmEventRecord", ctx, records, generationID, fullSync)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertAlarmEventRecord indicates an expected call of UpsertAlarmEventRecord.
-func (mr *MockAlarmRepositoryInterfaceMockRecorder) UpsertAlarmEventRecord(ctx, records any) *gomock.Call {
+func (mr *MockAlarmRepositoryInterfaceMockRecorder) UpsertAlarmEventRecord(ctx, records, generationID, fullSync any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAlarmEventRecord", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).UpsertAlarmEventRecord), ctx, records)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAlarmEventRecord", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).UpsertAlarmEventRecord), ctx, records, generationID, fullSync)
 }

@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS alarm_event_record (
     fingerprint TEXT NOT NULL, -- Unique identifier of caas alerts
     should_create_data_change_event BOOLEAN DEFAULT TRUE NOT NULL, -- This flag is transient and is re-evaluated with each change to the alarm event row which potentially results a new entry in outbox using AFTER trigger.
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, -- Record creation timestamp
+    generation_id BIGINT DEFAULT 0 NOT NULL, -- GenerationID to determine if an event is stale
+    alarm_source TEXT DEFAULT 'alertmanager' NOT NULL, -- Source of event such as AM, hardware etc
 
     CONSTRAINT unique_fingerprint_alarm_raised_time UNIQUE (fingerprint, alarm_raised_time), -- Unique constraint to prevent duplicate caas alert with the same fingerprint and time
     CONSTRAINT chk_status CHECK (alarm_status IN ('firing', 'resolved')), -- Check constraint to enforce status as either 'firing' or 'resolved'
