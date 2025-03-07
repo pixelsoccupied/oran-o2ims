@@ -13,6 +13,7 @@ import (
 	reflect "reflect"
 
 	uuid "github.com/google/uuid"
+	pgx "github.com/jackc/pgx/v5"
 	models "github.com/openshift-kni/oran-o2ims/internal/service/alarms/internal/db/models"
 	models0 "github.com/openshift-kni/oran-o2ims/internal/service/common/db/models"
 	gomock "go.uber.org/mock/gomock"
@@ -205,6 +206,20 @@ func (mr *MockAlarmRepositoryInterfaceMockRecorder) PatchAlarmEventRecordACK(ctx
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchAlarmEventRecordACK", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).PatchAlarmEventRecordACK), ctx, id, record)
 }
 
+// ResolveNotificationWithStaleGenID mocks base method.
+func (m *MockAlarmRepositoryInterface) ResolveNotificationWithStaleGenID(ctx context.Context, generationID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveNotificationWithStaleGenID", ctx, generationID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResolveNotificationWithStaleGenID indicates an expected call of ResolveNotificationWithStaleGenID.
+func (mr *MockAlarmRepositoryInterfaceMockRecorder) ResolveNotificationWithStaleGenID(ctx, generationID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveNotificationWithStaleGenID", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).ResolveNotificationWithStaleGenID), ctx, generationID)
+}
+
 // UpdateServiceConfiguration mocks base method.
 func (m *MockAlarmRepositoryInterface) UpdateServiceConfiguration(ctx context.Context, id uuid.UUID, record *models.ServiceConfiguration) (*models.ServiceConfiguration, error) {
 	m.ctrl.T.Helper()
@@ -235,15 +250,29 @@ func (mr *MockAlarmRepositoryInterfaceMockRecorder) UpdateSubscriptionEventCurso
 }
 
 // UpsertAlarmEventRecord mocks base method.
-func (m *MockAlarmRepositoryInterface) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64, handleStaleEvents bool) error {
+func (m *MockAlarmRepositoryInterface) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertAlarmEventRecord", ctx, records, generationID, handleStaleEvents)
+	ret := m.ctrl.Call(m, "UpsertAlarmEventRecord", ctx, records, generationID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertAlarmEventRecord indicates an expected call of UpsertAlarmEventRecord.
-func (mr *MockAlarmRepositoryInterfaceMockRecorder) UpsertAlarmEventRecord(ctx, records, generationID, handleStaleEvents any) *gomock.Call {
+func (mr *MockAlarmRepositoryInterfaceMockRecorder) UpsertAlarmEventRecord(ctx, records, generationID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAlarmEventRecord", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).UpsertAlarmEventRecord), ctx, records, generationID, handleStaleEvents)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAlarmEventRecord", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).UpsertAlarmEventRecord), ctx, records, generationID)
+}
+
+// WithTransaction mocks base method.
+func (m *MockAlarmRepositoryInterface) WithTransaction(ctx context.Context, fn func(pgx.Tx) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WithTransaction", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WithTransaction indicates an expected call of WithTransaction.
+func (mr *MockAlarmRepositoryInterfaceMockRecorder) WithTransaction(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithTransaction", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).WithTransaction), ctx, fn)
 }

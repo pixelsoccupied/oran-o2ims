@@ -493,7 +493,7 @@ func (a *AlarmsServer) AmNotification(ctx context.Context, request api.AmNotific
 
 	generationID := time.Now().UnixNano()
 	// HandleAMAlert with fullSync to False since webhook can send alerts with any type of payload (arbitrary group_by)
-	if err := alertmanager.HandleAMAlerts(ctx, a.Infrastructure.Clients, a.AlarmsRepository, &request.Body.Alerts, generationID, false); err != nil {
+	if err := alertmanager.HandleAMAlerts(ctx, a.Infrastructure.Clients, a.AlarmsRepository, &request.Body.Alerts, generationID, alertmanager.Webhook); err != nil {
 		return nil, fmt.Errorf("failed to handle alerts: %w", err)
 	}
 

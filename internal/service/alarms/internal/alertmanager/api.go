@@ -92,7 +92,7 @@ func (c *AMClient) SyncAlerts(ctx context.Context) error {
 
 	if len(alertsToWebhook) != 0 {
 		generationID := time.Now().UnixNano()
-		if err := HandleAMAlerts(ctx, c.infrastructure.Clients, c.alarmsRepository, &alertsToWebhook, generationID, true); err != nil {
+		if err := HandleAMAlerts(ctx, c.infrastructure.Clients, c.alarmsRepository, &alertsToWebhook, generationID, API); err != nil {
 			return fmt.Errorf("failed to handle alerts during full sync: %w", err)
 		}
 

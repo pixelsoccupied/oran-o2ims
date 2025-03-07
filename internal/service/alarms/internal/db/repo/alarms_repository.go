@@ -30,6 +30,10 @@ type AlarmsRepository struct {
 // Compile time check for interface implementation
 var _ AlarmRepositoryInterface = (*AlarmsRepository)(nil)
 
+func (ar *AlarmsRepository) WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
+	return pgx.BeginFunc(ctx, ar.Db, fn) //nolint:wrapcheck
+}
+
 // GetAlarmEventRecords grabs all rows of alarm_event_record
 func (ar *AlarmsRepository) GetAlarmEventRecords(ctx context.Context) ([]models.AlarmEventRecord, error) {
 	return utils.FindAll[models.AlarmEventRecord](ctx, ar.Db)
@@ -115,37 +119,12 @@ func (ar *AlarmsRepository) GetAlarmSubscription(ctx context.Context, id uuid.UU
 }
 
 // UpsertAlarmEventRecord insert and updating an AlarmEventRecord.
-func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64, handleStaleEvents bool) error {
+func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64) error {
 	if len(records) == 0 {
 		slog.Warn("No records for events upsert")
-		return nil // this should never happen but handling it gracefully for tests
+		return nil
 	}
 
-	return pgx.BeginFunc(ctx, ar.Db, func(tx pgx.Tx) error { // nolint: wrapcheck
-		// Build queries for each record
-		sql, params, err := buildAlarmEventRecordUpsertQuery(records, generationID)
-		if err != nil {
-			return fmt.Errorf("failed to build query for event upsert: %w", err)
-		}
-
-		_, err = tx.Exec(ctx, sql, params...)
-		if err != nil {
-			return fmt.Errorf("failed to execute upsert query: %w", err)
-		}
-
-		if handleStaleEvents {
-			if err := resolveNotificationWithStaleGenID(ctx, tx, int(generationID)); err != nil {
-				return fmt.Errorf("failed to resolve notification with stale gen ID: %w", err)
-			}
-		}
-
-		slog.Info("Successfully inserted and updated alerts from alertmanager", "handleStaleEvents", handleStaleEvents)
-		return nil
-	})
-}
-
-// buildAlarmEventRecordUpsertQuery builds the query for insert and updating an AlarmEventRecord
-func buildAlarmEventRecordUpsertQuery(records []models.AlarmEventRecord, generationID int64) (string, []any, error) {
 	m := models.AlarmEventRecord{}
 	query := psql.Insert(im.Into(m.TableName()))
 
@@ -186,14 +165,24 @@ func buildAlarmEventRecordUpsertQuery(records []models.AlarmEventRecord, generat
 		im.Where(psql.Quote(m.TableName(), dbTags["AlarmSource"]).EQ(psql.Arg("alertmanager"))),
 	))
 
-	return query.Build() //nolint:wrapcheck
+	sql, params, err := query.Build()
+	if err != nil {
+		return fmt.Errorf("failed to build query for event upsert: %w", err)
+	}
+
+	_, err = ar.Db.Exec(ctx, sql, params...)
+	if err != nil {
+		return fmt.Errorf("failed to execute upsert query: %w", err)
+	}
+
+	return nil
 }
 
 // TimeNow allows test to override time.Now
 var TimeNow = time.Now
 
-// resolveNotificationWithStaleGenID any generation ID
-func resolveNotificationWithStaleGenID(ctx context.Context, db pgx.Tx, generationID int) error {
+// ResolveNotificationWithStaleGenID any generation ID
+func (ar *AlarmsRepository) ResolveNotificationWithStaleGenID(ctx context.Context, generationID int) error {
 	m := models.AlarmEventRecord{}
 	dbTags := utils.GetAllDBTagsFromStruct(m)
 	var (
@@ -225,7 +214,7 @@ func resolveNotificationWithStaleGenID(ctx context.Context, db pgx.Tx, generatio
 	if err != nil {
 		return fmt.Errorf("failed to build AlarmEventRecord update query when processing AM notification: %w", err)
 	}
-	records, err := utils.ExecuteCollectRows[models.AlarmEventRecord](ctx, db, sql, params)
+	records, err := utils.ExecuteCollectRows[models.AlarmEventRecord](ctx, ar.Db, sql, params)
 	if err != nil {
 		return err
 	}
