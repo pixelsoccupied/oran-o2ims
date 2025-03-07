@@ -206,18 +206,18 @@ func (mr *MockAlarmRepositoryInterfaceMockRecorder) PatchAlarmEventRecordACK(ctx
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PatchAlarmEventRecordACK", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).PatchAlarmEventRecordACK), ctx, id, record)
 }
 
-// ResolveNotificationWithStaleGenID mocks base method.
-func (m *MockAlarmRepositoryInterface) ResolveNotificationWithStaleGenID(ctx context.Context, generationID int) error {
+// ResolveStaleAlarmEventRecord mocks base method.
+func (m *MockAlarmRepositoryInterface) ResolveStaleAlarmEventRecord(ctx context.Context, generationID int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveNotificationWithStaleGenID", ctx, generationID)
+	ret := m.ctrl.Call(m, "ResolveStaleAlarmEventRecord", ctx, generationID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// ResolveNotificationWithStaleGenID indicates an expected call of ResolveNotificationWithStaleGenID.
-func (mr *MockAlarmRepositoryInterfaceMockRecorder) ResolveNotificationWithStaleGenID(ctx, generationID any) *gomock.Call {
+// ResolveStaleAlarmEventRecord indicates an expected call of ResolveStaleAlarmEventRecord.
+func (mr *MockAlarmRepositoryInterfaceMockRecorder) ResolveStaleAlarmEventRecord(ctx, generationID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveNotificationWithStaleGenID", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).ResolveNotificationWithStaleGenID), ctx, generationID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveStaleAlarmEventRecord", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).ResolveStaleAlarmEventRecord), ctx, generationID)
 }
 
 // UpdateServiceConfiguration mocks base method.

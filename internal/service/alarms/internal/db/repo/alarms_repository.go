@@ -181,8 +181,8 @@ func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records 
 // TimeNow allows test to override time.Now
 var TimeNow = time.Now
 
-// ResolveNotificationWithStaleGenID any generation ID
-func (ar *AlarmsRepository) ResolveNotificationWithStaleGenID(ctx context.Context, generationID int) error {
+// ResolveStaleAlarmEventRecord resolve all alerts with older generation ID
+func (ar *AlarmsRepository) ResolveStaleAlarmEventRecord(ctx context.Context, generationID int) error {
 	m := models.AlarmEventRecord{}
 	dbTags := utils.GetAllDBTagsFromStruct(m)
 	var (
@@ -220,7 +220,7 @@ func (ar *AlarmsRepository) ResolveNotificationWithStaleGenID(ctx context.Contex
 	}
 
 	if len(records) > 0 {
-		slog.Info("Successfully resolved alarms stale alerts", "records", len(records))
+		slog.Info("Successfully resolved stale alarmeventrecords", "records", len(records))
 	}
 	return nil
 }

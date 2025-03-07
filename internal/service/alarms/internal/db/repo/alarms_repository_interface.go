@@ -28,5 +28,5 @@ type AlarmRepositoryInterface interface {
 	GetAllAlarmsDataChange(ctx context.Context) ([]commonmodels.DataChangeEvent, error)
 	DeleteAlarmsDataChange(ctx context.Context, dataChangeId uuid.UUID) error
 	WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error
-	ResolveNotificationWithStaleGenID(ctx context.Context, generationID int) error
+	ResolveStaleAlarmEventRecord(ctx context.Context, generationID int) error
 }

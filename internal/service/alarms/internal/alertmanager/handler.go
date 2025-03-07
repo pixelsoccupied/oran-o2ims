@@ -40,7 +40,7 @@ func HandleAMAlerts(ctx context.Context, clients []infrastructure.Client, reposi
 		}
 
 		if source == API { // Resolve stale only if source is API since `/alerts` endpoint gets us the full set of alerts
-			if err := repository.ResolveNotificationWithStaleGenID(ctx, int(generationID)); err != nil {
+			if err := repository.ResolveStaleAlarmEventRecord(ctx, int(generationID)); err != nil {
 				return fmt.Errorf("could not resolve notification: %w", err)
 			}
 		}
