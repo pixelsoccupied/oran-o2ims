@@ -235,15 +235,15 @@ func (mr *MockAlarmRepositoryInterfaceMockRecorder) UpdateSubscriptionEventCurso
 }
 
 // UpsertAlarmEventRecord mocks base method.
-func (m *MockAlarmRepositoryInterface) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64, fullSync bool) error {
+func (m *MockAlarmRepositoryInterface) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64, handleStaleEvents bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertAlarmEventRecord", ctx, records, generationID, fullSync)
+	ret := m.ctrl.Call(m, "UpsertAlarmEventRecord", ctx, records, generationID, handleStaleEvents)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertAlarmEventRecord indicates an expected call of UpsertAlarmEventRecord.
-func (mr *MockAlarmRepositoryInterfaceMockRecorder) UpsertAlarmEventRecord(ctx, records, generationID, fullSync any) *gomock.Call {
+func (mr *MockAlarmRepositoryInterfaceMockRecorder) UpsertAlarmEventRecord(ctx, records, generationID, handleStaleEvents any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAlarmEventRecord", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).UpsertAlarmEventRecord), ctx, records, generationID, fullSync)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAlarmEventRecord", reflect.TypeOf((*MockAlarmRepositoryInterface)(nil).UpsertAlarmEventRecord), ctx, records, generationID, handleStaleEvents)
 }

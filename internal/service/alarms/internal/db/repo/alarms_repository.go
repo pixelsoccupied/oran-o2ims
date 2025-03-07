@@ -115,7 +115,7 @@ func (ar *AlarmsRepository) GetAlarmSubscription(ctx context.Context, id uuid.UU
 }
 
 // UpsertAlarmEventRecord insert and updating an AlarmEventRecord.
-func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64, fullSync bool) error {
+func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64, handleStaleEvents bool) error {
 	if len(records) == 0 {
 		slog.Warn("No records for events upsert")
 		return nil // this should never happen but handling it gracefully for tests
@@ -133,13 +133,13 @@ func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records 
 			return fmt.Errorf("failed to execute upsert query: %w", err)
 		}
 
-		if fullSync {
+		if handleStaleEvents {
 			if err := resolveNotificationWithStaleGenID(ctx, tx, int(generationID)); err != nil {
 				return fmt.Errorf("failed to resolve notification with stale gen ID: %w", err)
 			}
 		}
 
-		slog.Info("Successfully inserted and updated alerts from alertmanager", "full_sync", fullSync)
+		slog.Info("Successfully inserted and updated alerts from alertmanager", "handleStaleEvents", handleStaleEvents)
 		return nil
 	})
 }

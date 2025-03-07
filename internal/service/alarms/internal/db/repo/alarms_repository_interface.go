@@ -21,7 +21,7 @@ type AlarmRepositoryInterface interface {
 	DeleteAlarmSubscription(ctx context.Context, id uuid.UUID) (int64, error)
 	CreateAlarmSubscription(ctx context.Context, record models.AlarmSubscription) (*models.AlarmSubscription, error)
 	GetAlarmSubscription(ctx context.Context, id uuid.UUID) (*models.AlarmSubscription, error)
-	UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64, fullSync bool) error
+	UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64, handleStaleEvents bool) error
 	UpdateSubscriptionEventCursor(ctx context.Context, subscription models.AlarmSubscription) error
 	GetAllAlarmsDataChange(ctx context.Context) ([]commonmodels.DataChangeEvent, error)
 	DeleteAlarmsDataChange(ctx context.Context, dataChangeId uuid.UUID) error

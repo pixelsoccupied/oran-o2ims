@@ -11,7 +11,7 @@ import (
 )
 
 // HandleAMAlerts this is called from both Webhook and API alerts payload
-func HandleAMAlerts(ctx context.Context, clients []infrastructure.Client, repository repo.AlarmRepositoryInterface, alerts *[]api.Alert, generationID int64, fullSync bool) error {
+func HandleAMAlerts(ctx context.Context, clients []infrastructure.Client, repository repo.AlarmRepositoryInterface, alerts *[]api.Alert, generationID int64, handleStaleEvents bool) error {
 	// Get cached cluster server data
 	var clusterServer infrastructure.Client
 	for i := range clients {
@@ -24,12 +24,12 @@ func HandleAMAlerts(ctx context.Context, clients []infrastructure.Client, reposi
 	aerModels := ConvertAmToAlarmEventRecordModels(alerts, clusterServer)
 
 	// Insert and update AlarmEventRecord
-	if err := repository.UpsertAlarmEventRecord(ctx, aerModels, generationID, fullSync); err != nil {
+	if err := repository.UpsertAlarmEventRecord(ctx, aerModels, generationID, handleStaleEvents); err != nil {
 		msg := "failed to upsert AlarmEventRecord to db"
 		slog.Error(msg, "error", err)
 		return fmt.Errorf("%s: %w", msg, err)
 	}
 
-	slog.Info("Successfully upserted AlarmEventRecords to db")
+	slog.Info("Successfully handled AlarmEventRecords")
 	return nil
 }
