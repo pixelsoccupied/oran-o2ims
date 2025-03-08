@@ -52,7 +52,6 @@ func NewAlertManagerClient(k8sClient client.Client, amrepo repo.AlarmRepositoryI
 }
 
 // RunAlertSyncScheduler runs sync alerts at regular intervals until context is canceled
-// The first sync happens immediately, then at the specified interval
 // This function blocks until the context is canceled and returns any error encountered
 func (c *AMClient) RunAlertSyncScheduler(ctx context.Context, interval time.Duration) error {
 	ticker := time.NewTicker(interval)
@@ -71,7 +70,7 @@ func (c *AMClient) RunAlertSyncScheduler(ctx context.Context, interval time.Dura
 			}
 		case <-ctx.Done():
 			slog.Info("Alert sync scheduler shutting down")
-			return nil
+			return ctx.Err() //nolint:wrapcheck
 		}
 	}
 }
