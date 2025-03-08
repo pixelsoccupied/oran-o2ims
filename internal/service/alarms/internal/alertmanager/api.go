@@ -116,7 +116,7 @@ func (c *AMClient) getAlertmanagerRoute(ctx context.Context) (string, error) {
 
 	// Get the route
 	if err := c.k8sClient.Get(ctx, client.ObjectKey{
-		Namespace: "open-cluster-management-observability",
+		Namespace: ACMObsAMNamespace,
 		Name:      "alertmanager",
 	}, route); err != nil {
 		return "", fmt.Errorf("error getting alertmanager route: %w", err)
@@ -156,7 +156,7 @@ func (c *AMClient) getAlertmanagerRoute(ctx context.Context) (string, error) {
 func (c *AMClient) createAlertmanagerClient(ctx context.Context) (*http.Client, string, error) {
 	var secret corev1.Secret
 	if err := c.k8sClient.Get(ctx, client.ObjectKey{
-		Namespace: "open-cluster-management-observability",
+		Namespace: ACMObsAMNamespace,
 		Name:      "observability-alertmanager-accessor-token",
 	}, &secret); err != nil {
 		return nil, "", fmt.Errorf("error getting token secret: %w", err)

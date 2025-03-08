@@ -16,6 +16,7 @@ func ConvertAmToAlarmEventRecordModels(alerts *[]api.Alert, infrastructureClient
 	records := make([]models.AlarmEventRecord, 0, len(*alerts))
 	for _, alert := range *alerts {
 		record := models.AlarmEventRecord{}
+
 		if alert.StartsAt != nil {
 			record.AlarmRaisedTime = *alert.StartsAt
 		} else {
@@ -41,6 +42,7 @@ func ConvertAmToAlarmEventRecordModels(alerts *[]api.Alert, infrastructureClient
 			record.Fingerprint = *alert.Fingerprint
 		} else {
 			slog.Error("Alert Fingerprint is required, skipping.", "alert", alert)
+			continue
 		}
 
 		if alert.EndsAt != nil {

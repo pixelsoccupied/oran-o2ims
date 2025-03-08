@@ -318,6 +318,8 @@ func ConfigAlarmServerCleanup(ctx context.Context, alarmServer *api.AlarmsServer
 	return nil
 }
 
+// Init everything needed to start using ACM's alertmanager
+// Collect the full set of alerts with API, start a background sync and finally open up webhook
 func startAlertmanager(ctx context.Context, alarmServer *api.AlarmsServer) error {
 	hubclient, err := k8s.NewClientForHub()
 	if err != nil {
@@ -331,16 +333,16 @@ func startAlertmanager(ctx context.Context, alarmServer *api.AlarmsServer) error
 		return fmt.Errorf("failed to run initial alert sync: %w", err)
 	}
 
-	// Start alert sync scheduler
+	// Start alert sync scheduler with a go routine
 	alarmServer.Wg.Add(1)
 	go func() {
 		defer alarmServer.Wg.Done()
-		if err := c.RunAlertSyncScheduler(ctx, 10*time.Second); err != nil {
+		if err := c.RunAlertSyncScheduler(ctx, 1*time.Hour); err != nil {
 			slog.Error("failed to run alert sync scheduler", "error", err)
 		}
 	}()
 
-	// Configure webhook
+	// Configure webhook by programmatically merging with the existing config
 	if err := alertmanager.Setup(ctx); err != nil {
 		return fmt.Errorf("error configuring alert manager: %w", err)
 	}

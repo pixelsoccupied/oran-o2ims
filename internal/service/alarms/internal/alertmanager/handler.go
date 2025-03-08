@@ -13,9 +13,9 @@ import (
 	"github.com/openshift-kni/oran-o2ims/internal/service/alarms/internal/infrastructure"
 )
 
+// Source of Alert manager either through API or Webhook
 type Source string
 
-// Define constants for your different sources
 const (
 	API     Source = "API"
 	Webhook Source = "Webhook"
@@ -53,7 +53,7 @@ func HandleAMAlerts(ctx context.Context, clients []infrastructure.Client, reposi
 			}
 		}
 
-		slog.Info("Successfully handled AlarmEventRecords")
+		slog.Info("Successfully handled AlarmEventRecords", "source", string(source))
 		return nil
 	})
 }
