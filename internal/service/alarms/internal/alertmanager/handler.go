@@ -13,7 +13,7 @@ import (
 	"github.com/openshift-kni/oran-o2ims/internal/service/alarms/internal/infrastructure"
 )
 
-// Source of Alert manager either through API or Webhook
+// Source of Alertmanager payload either through API or Webhook
 type Source string
 
 const (
@@ -21,8 +21,9 @@ const (
 	Webhook Source = "Webhook"
 )
 
-// HandleAMAlerts this is called from both Webhook and API alerts payload
-func HandleAMAlerts(ctx context.Context, clients []infrastructure.Client, repository repo.AlarmRepositoryInterface, alerts *[]api.Alert, source Source) error {
+// HandleAlerts can be called when a payload from Webhook or API `/alerts` is received
+// Webhook is our primary and API as our backup and sync mechanism
+func HandleAlerts(ctx context.Context, clients []infrastructure.Client, repository repo.AlarmRepositoryInterface, alerts *[]api.Alert, source Source) error {
 	if len(*alerts) == 0 {
 		return nil
 	}
@@ -40,13 +41,15 @@ func HandleAMAlerts(ctx context.Context, clients []infrastructure.Client, reposi
 
 	// Insert and update AlarmEventRecord and optionally resolve stale
 	return repository.WithTransaction(ctx, func(tx pgx.Tx) error { //nolint:wrapcheck
+		// genID to determine if stale
 		generationID := time.Now().UnixNano()
 
+		// Insert or update with alerts
 		if err := repository.UpsertAlarmEventRecord(ctx, aerModels, generationID); err != nil {
 			return fmt.Errorf("failed to upsert alarm event record model: %w", err)
 		}
 
-		// Resolve stale only if source is API since `/alerts` endpoint gets us the full set of alerts
+		// Resolve stale only if source is API since `/alerts` as this step only works if we have full set of alerts
 		if source == API {
 			if err := repository.ResolveStaleAlarmEventRecord(ctx, int(generationID)); err != nil {
 				return fmt.Errorf("could not resolve notification: %w", err)

@@ -166,30 +166,31 @@ func ConvertAPIAlertsToWebhook(apiAlerts []APIAlert) ([]api.Alert, error) {
 
 	for _, a := range apiAlerts {
 		// Determine the alert status based on endsAt compared to current time.
-		// This is strange but API will always have an `endAt` regardless if an alert actually "ended" or resolved.
-		// AM api basically has an endAt which is either "now() + resolve_timeout" (future)
-		// or time in the past indicating an alert is resolved and will cleanup from AM memory soon
+		//
+		// This is strange but API call will always have an `endsAt` regardless if an alert actually "ended" or resolved.
+		// AM api `endsAt` is either "now() + resolve_timeout" (future) or time in the past indicating an alert is resolved.
+		//
+		// A resolved alerts (i.e endsAt from past) is set to be removed from the /alerts but depending on when we call the API
+		// we may still see "resolved" alerts, which is why this need to be handled correctly.
 		var state api.AlertmanagerNotificationStatus
-		var finalEndAt *time.Time
+		var finalEndsAt *time.Time
 		if now.Before(a.EndsAt) {
 			state = api.Firing
-			finalEndAt = nil
+			finalEndsAt = nil
 		} else {
 			state = api.Resolved
-			finalEndAt = &a.EndsAt
+			finalEndsAt = &a.EndsAt
 		}
 
-		// Create local copies to take their addresses.
-		fp := a.Fingerprint
-		genURL := a.GeneratorURL
-
+		// Other than endsAt and status (which needs to be computed) everything else is a pass-through
+		// to make API payload to a webhook payload
 		webhookAlert := api.Alert{
 			Annotations:  &a.Annotations,
 			Labels:       &a.Labels,
 			StartsAt:     &a.StartsAt,
-			EndsAt:       finalEndAt,
-			Fingerprint:  &fp,
-			GeneratorURL: &genURL,
+			EndsAt:       finalEndsAt,
+			Fingerprint:  &a.Fingerprint,
+			GeneratorURL: &a.GeneratorURL,
 			Status:       &state,
 		}
 
