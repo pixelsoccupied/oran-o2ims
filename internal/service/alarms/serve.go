@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -69,9 +70,12 @@ func Serve(config *api.AlarmsServerConfig) error {
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
 	ctx, cancel := context.WithCancel(context.Background())
+
+	// Recovery defer to print panic strace(runs last, placed first)
 	defer func() {
-		slog.Info("Cancelling context")
-		cancel()
+		if r := recover(); r != nil {
+			slog.Error("something went wrong", "stacktrace", string(debug.Stack()))
+		}
 	}()
 
 	go func() {
@@ -92,13 +96,21 @@ func Serve(config *api.AlarmsServerConfig) error {
 		return fmt.Errorf("failed to connected to DB: %w", err)
 	}
 	defer func() {
-		if err := recover(); err != nil {
-			slog.Error("Recovered from panic in alarms server", "error", err)
-		} else {
-			slog.Info("Successful")
+		// Try to close the pool with a timeout
+		closeComplete := make(chan struct{})
+		go func() {
+			pool.Close()
+			close(closeComplete)
+		}()
+
+		// Wait for either close completion or timeout
+		// If there's panic during server init DB pool close may deadlock - handling this with timeout
+		select {
+		case <-closeComplete:
+			slog.Info("Closed DB connection")
+		case <-time.After(5 * time.Second):
+			slog.Warn("DB connection close timed out")
 		}
-		slog.Info("Closing DB connection")
-		pool.Close()
 	}()
 
 	// Init infrastructure clients

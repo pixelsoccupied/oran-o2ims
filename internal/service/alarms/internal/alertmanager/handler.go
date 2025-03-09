@@ -37,7 +37,7 @@ func HandleAlerts(ctx context.Context, clients []infrastructure.Client, reposito
 	}
 
 	// Combine possible definitions with events
-	aerModels := ConvertAmToAlarmEventRecordModels(alerts, clusterServer)
+	aerModels := ConvertAmToAlarmEventRecordModels(ctx, alerts, clusterServer)
 
 	// Insert and update AlarmEventRecord and optionally resolve stale
 	if err := repository.WithTransaction(ctx, func(tx pgx.Tx) error { //nolint:wrapcheck

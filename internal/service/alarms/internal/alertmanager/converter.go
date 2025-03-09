@@ -1,6 +1,7 @@
 package alertmanager
 
 import (
+	"context"
 	"log/slog"
 	"maps"
 	"time"
@@ -12,7 +13,7 @@ import (
 )
 
 // ConvertAmToAlarmEventRecordModels get alarmEventRecords based on the alertmanager notification and AlarmDefinition
-func ConvertAmToAlarmEventRecordModels(alerts *[]api.Alert, infrastructureClient infrastructure.Client) []models.AlarmEventRecord {
+func ConvertAmToAlarmEventRecordModels(ctx context.Context, alerts *[]api.Alert, infrastructureClient infrastructure.Client) []models.AlarmEventRecord {
 	records := make([]models.AlarmEventRecord, 0, len(*alerts))
 	for _, alert := range *alerts {
 		record := models.AlarmEventRecord{}
@@ -60,7 +61,7 @@ func ConvertAmToAlarmEventRecordModels(alerts *[]api.Alert, infrastructureClient
 
 		// derive ObjectTypeID from ObjectID
 		if record.ObjectID != nil {
-			objectTypeID, err := infrastructureClient.GetObjectTypeID(*record.ObjectID)
+			objectTypeID, err := infrastructureClient.GetObjectTypeID(ctx, *record.ObjectID)
 			if err != nil {
 				slog.Warn("Could not get object type ID", "objectID", record.ObjectID, "err", err.Error())
 			} else {
@@ -71,7 +72,7 @@ func ConvertAmToAlarmEventRecordModels(alerts *[]api.Alert, infrastructureClient
 		// See if possible to pick up additional info from its definition
 		if record.ObjectTypeID != nil {
 			_, severity := GetPerceivedSeverity(*alert.Labels)
-			alarmDefinitionID, err := infrastructureClient.GetAlarmDefinitionID(*record.ObjectTypeID, GetAlertName(*alert.Labels), severity)
+			alarmDefinitionID, err := infrastructureClient.GetAlarmDefinitionID(ctx, *record.ObjectTypeID, GetAlertName(*alert.Labels), severity)
 			if err != nil {
 				slog.Warn("Could not get alarm definition ID", "objectTypeID", *record.ObjectTypeID, "name", GetAlertName(*alert.Labels), "severity", severity, "err", err.Error())
 			} else {

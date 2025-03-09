@@ -19,8 +19,8 @@ type Client interface {
 
 	FetchAll(context.Context) error
 
-	GetObjectTypeID(objectID uuid.UUID) (uuid.UUID, error)
-	GetAlarmDefinitionID(ObjectTypeID uuid.UUID, name, severity string) (uuid.UUID, error)
+	GetObjectTypeID(ctx context.Context, objectID uuid.UUID) (uuid.UUID, error)
+	GetAlarmDefinitionID(ctx context.Context, ObjectTypeID uuid.UUID, name, severity string) (uuid.UUID, error)
 
 	// Sync starts a background process to populate and keep up-to-date a local cache with data from the infrastructure servers
 	Sync(ctx context.Context)

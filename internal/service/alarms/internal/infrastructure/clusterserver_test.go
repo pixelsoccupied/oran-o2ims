@@ -199,7 +199,7 @@ var _ = Describe("ClusterServer", func() {
 			clusterServer.nodeClusterIDToNodeClusterTypeID = make(map[uuid.UUID]uuid.UUID)
 			clusterServer.nodeClusterIDToNodeClusterTypeID[nodeClusterID] = nodeClusterTypeID
 
-			id, err := clusterServer.GetObjectTypeID(nodeClusterID)
+			id, err := clusterServer.GetObjectTypeID(context.Background(), nodeClusterID)
 			Expect(err).To(BeNil())
 			Expect(id).To(Equal(nodeClusterTypeID))
 		})
@@ -224,7 +224,7 @@ var _ = Describe("ClusterServer", func() {
 					Body:       io.NopCloser(bytes.NewReader(body)),
 				}, nil)
 
-			id, err := clusterServer.GetObjectTypeID(nodeClusterID)
+			id, err := clusterServer.GetObjectTypeID(context.Background(), nodeClusterID)
 			Expect(err).To(BeNil())
 			Expect(id).To(Equal(nodeClusterTypeID))
 			Expect(clusterServer.nodeClusterIDToNodeClusterTypeID[nodeClusterID]).To(Equal(nodeClusterTypeID))
@@ -242,7 +242,7 @@ var _ = Describe("ClusterServer", func() {
 					Body:       io.NopCloser(bytes.NewReader([]byte{})),
 				}, nil)
 
-			_, err := clusterServer.GetObjectTypeID(nodeClusterID)
+			_, err := clusterServer.GetObjectTypeID(context.Background(), nodeClusterID)
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -263,7 +263,7 @@ var _ = Describe("ClusterServer", func() {
 			clusterServer.alarmDictionaryIDToAlarmDefinitions[alarmDictionaryID] = make(AlarmDefinition)
 			clusterServer.alarmDictionaryIDToAlarmDefinitions[alarmDictionaryID][alarmDefinitionIdentifier] = alarmDefinitionID
 
-			id, err := clusterServer.GetAlarmDefinitionID(nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
+			id, err := clusterServer.GetAlarmDefinitionID(context.Background(), nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
 			Expect(err).To(BeNil())
 			Expect(id).To(Equal(alarmDefinitionID))
 		})
@@ -299,7 +299,7 @@ var _ = Describe("ClusterServer", func() {
 					Body:       io.NopCloser(bytes.NewReader(body)),
 				}, nil)
 
-			id, err := clusterServer.GetAlarmDefinitionID(nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
+			id, err := clusterServer.GetAlarmDefinitionID(context.Background(), nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
 			Expect(err).To(BeNil())
 			Expect(id).To(Equal(alarmDefinitionID))
 		})
@@ -320,7 +320,7 @@ var _ = Describe("ClusterServer", func() {
 					Body:       io.NopCloser(bytes.NewReader([]byte{})),
 				}, nil)
 
-			_, err := clusterServer.GetAlarmDefinitionID(nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
+			_, err := clusterServer.GetAlarmDefinitionID(context.Background(), nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -359,7 +359,7 @@ var _ = Describe("ClusterServer", func() {
 					Body:       io.NopCloser(bytes.NewReader(body)),
 				}, nil)
 
-			id, err := clusterServer.GetAlarmDefinitionID(nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
+			id, err := clusterServer.GetAlarmDefinitionID(context.Background(), nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
 			Expect(err).To(BeNil())
 			Expect(id).To(Equal(alarmDefinitionID))
 		})
@@ -383,7 +383,7 @@ var _ = Describe("ClusterServer", func() {
 					Body:       io.NopCloser(bytes.NewReader([]byte{})),
 				}, nil)
 
-			_, err := clusterServer.GetAlarmDefinitionID(nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
+			_, err := clusterServer.GetAlarmDefinitionID(context.Background(), nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -423,7 +423,7 @@ var _ = Describe("ClusterServer", func() {
 					Body:       io.NopCloser(bytes.NewReader(body)),
 				}, nil)
 
-			id, err := clusterServer.GetAlarmDefinitionID(nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
+			id, err := clusterServer.GetAlarmDefinitionID(context.Background(), nodeClusterTypeID, alarmDefinitionIdentifier.Name, alarmDefinitionIdentifier.Severity)
 			Expect(err).To(BeNil())
 			Expect(id).To(Equal(alarmDefinitionID))
 		})
@@ -468,7 +468,7 @@ var _ = Describe("ClusterServer", func() {
 				Severity: "warning",
 			}
 
-			_, err = clusterServer.GetAlarmDefinitionID(nodeClusterTypeID, missingAlarmDefinitionIdentifier.Name, missingAlarmDefinitionIdentifier.Severity)
+			_, err = clusterServer.GetAlarmDefinitionID(context.Background(), nodeClusterTypeID, missingAlarmDefinitionIdentifier.Name, missingAlarmDefinitionIdentifier.Severity)
 			Expect(err).To(HaveOccurred())
 		})
 	})
