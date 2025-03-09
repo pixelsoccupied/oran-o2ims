@@ -69,7 +69,10 @@ func Serve(config *api.AlarmsServerConfig) error {
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	defer func() {
+		slog.Info("Cancelling context")
+		cancel()
+	}()
 
 	go func() {
 		sig := <-shutdown
@@ -89,6 +92,11 @@ func Serve(config *api.AlarmsServerConfig) error {
 		return fmt.Errorf("failed to connected to DB: %w", err)
 	}
 	defer func() {
+		if err := recover(); err != nil {
+			slog.Error("Recovered from panic in alarms server", "error", err)
+		} else {
+			slog.Info("Successful")
+		}
 		slog.Info("Closing DB connection")
 		pool.Close()
 	}()
@@ -346,5 +354,7 @@ func startAlertmanager(ctx context.Context, alarmServer *api.AlarmsServer) error
 	if err := alertmanager.Setup(ctx); err != nil {
 		return fmt.Errorf("error configuring alert manager: %w", err)
 	}
+
+	slog.Info("Successfully did the first sync and config with alertmanager")
 	return nil
 }

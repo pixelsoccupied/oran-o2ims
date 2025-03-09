@@ -18,7 +18,7 @@ func ConvertAmToAlarmEventRecordModels(alerts *[]api.Alert, infrastructureClient
 		record := models.AlarmEventRecord{}
 
 		// Validate startsAt is always there
-		if alert.StartsAt != nil && !alert.EndsAt.IsZero() {
+		if alert.StartsAt != nil && !alert.StartsAt.IsZero() {
 			record.AlarmRaisedTime = *alert.StartsAt
 		} else {
 			slog.Error("Alert StartsAt is required, skipping.", "alert", alert)
@@ -83,6 +83,7 @@ func ConvertAmToAlarmEventRecordModels(alerts *[]api.Alert, infrastructureClient
 		records = append(records, record)
 	}
 
+	slog.Info("Converted alerts", "records", len(records))
 	return records
 }
 

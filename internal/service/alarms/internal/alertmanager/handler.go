@@ -40,7 +40,8 @@ func HandleAlerts(ctx context.Context, clients []infrastructure.Client, reposito
 	aerModels := ConvertAmToAlarmEventRecordModels(alerts, clusterServer)
 
 	// Insert and update AlarmEventRecord and optionally resolve stale
-	return repository.WithTransaction(ctx, func(tx pgx.Tx) error { //nolint:wrapcheck
+	if err := repository.WithTransaction(ctx, func(tx pgx.Tx) error { //nolint:wrapcheck
+		slog.Info("Handling alerts", "source", string(source))
 		// genID to determine if stale
 		generationID := time.Now().UnixNano()
 
@@ -56,7 +57,11 @@ func HandleAlerts(ctx context.Context, clients []infrastructure.Client, reposito
 			}
 		}
 
-		slog.Info("Successfully handled AlarmEventRecords", "source", string(source))
 		return nil
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to handle alerts from %s: %w", string(source), err)
+	}
+
+	slog.Info("Successfully handled AlarmEventRecords", "source", string(source))
+	return nil
 }
