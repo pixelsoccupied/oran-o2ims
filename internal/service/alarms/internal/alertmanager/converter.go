@@ -17,13 +17,15 @@ func ConvertAmToAlarmEventRecordModels(alerts *[]api.Alert, infrastructureClient
 	for _, alert := range *alerts {
 		record := models.AlarmEventRecord{}
 
-		if alert.StartsAt != nil {
+		// Validate startsAt is always there
+		if alert.StartsAt != nil && !alert.EndsAt.IsZero() {
 			record.AlarmRaisedTime = *alert.StartsAt
 		} else {
 			slog.Error("Alert StartsAt is required, skipping.", "alert", alert)
 			continue
 		}
 
+		// Validate status is always there, also derive the PerceivedSeverity as needed
 		if alert.Status != nil {
 			record.AlarmStatus = string(*alert.Status)
 			// Make sure the current payload has the right severity
@@ -38,6 +40,7 @@ func ConvertAmToAlarmEventRecordModels(alerts *[]api.Alert, infrastructureClient
 			continue
 		}
 
+		// Validate Fingerprint is always there
 		if alert.Fingerprint != nil {
 			record.Fingerprint = *alert.Fingerprint
 		} else {
@@ -45,7 +48,7 @@ func ConvertAmToAlarmEventRecordModels(alerts *[]api.Alert, infrastructureClient
 			continue
 		}
 
-		if alert.EndsAt != nil {
+		if alert.EndsAt != nil && !alert.EndsAt.IsZero() {
 			record.AlarmClearedTime = alert.EndsAt
 		}
 

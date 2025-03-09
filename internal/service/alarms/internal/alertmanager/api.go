@@ -100,6 +100,76 @@ func (c *AMClient) SyncAlerts(ctx context.Context) error {
 	return nil
 }
 
+// getAlerts retrieves all alerts from AlertManager API
+func (c *AMClient) getAlerts(ctx context.Context) ([]APIAlert, error) {
+	// Get the alertmanager route
+	alertManagerHost, err := c.getAlertmanagerRoute(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get alertmanager route: %w", err)
+	}
+
+	// Initialize a new client each time to pick up the latest secrets
+	httpClient, token, err := c.createAlertmanagerClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create alertmanager client: %w", err)
+	}
+
+	// Create request
+	u := url.URL{
+		Scheme: "https",
+		Host:   alertManagerHost,
+		Path:   "/api/v2/alerts",
+	}
+
+	// Build query parameters
+	q := u.Query()
+	q.Set("active", "true")
+	// Get alerts meant for OranReceiverName webhook
+	q.Set("receiver", fmt.Sprintf("^(%s)$", OranReceiverName))
+	// Get alerts even it user silenced it
+	q.Set("silenced", "true")
+
+	u.RawQuery = q.Encode()
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+
+	// Add auth header
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	req.Header.Add("Accept", "application/json")
+
+	// Send request
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error sending request: %w", err)
+	}
+	defer func(Body io.ReadCloser) {
+		if err := Body.Close(); err != nil {
+			slog.Error("failed to close response body during AM get call", "error", err.Error())
+		}
+	}(resp.Body)
+
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response: %w", err)
+	}
+
+	// Check HTTP status code
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("http error during call to alertmanager API: %d - %s", resp.StatusCode, string(body))
+	}
+
+	// Parse response as array of alerts
+	var alerts []APIAlert
+	if err := json.Unmarshal(body, &alerts); err != nil {
+		return nil, fmt.Errorf("error parsing response: %w, body: %s", err, string(body))
+	}
+
+	return alerts, nil
+}
+
 // getAlertmanagerRoute gets the hostname for the alertmanager route using unstructured type
 func (c *AMClient) getAlertmanagerRoute(ctx context.Context) (string, error) {
 	// Define the route GVK (Group, Version, Kind)
@@ -190,74 +260,4 @@ func (c *AMClient) createAlertmanagerClient(ctx context.Context) (*http.Client, 
 	}
 
 	return httpClient, string(token), nil
-}
-
-// getAlerts retrieves all alerts from AlertManager API
-func (c *AMClient) getAlerts(ctx context.Context) ([]APIAlert, error) {
-	// Get the alertmanager route
-	alertManagerHost, err := c.getAlertmanagerRoute(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get alertmanager route: %w", err)
-	}
-
-	// Initialize a new client each time to pick up the latest secrets
-	httpClient, token, err := c.createAlertmanagerClient(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create alertmanager client: %w", err)
-	}
-
-	// Create request
-	u := url.URL{
-		Scheme: "https",
-		Host:   alertManagerHost,
-		Path:   "/api/v2/alerts",
-	}
-
-	// Build query parameters
-	q := u.Query()
-	q.Set("active", "true")
-	// Get alerts meant for OranReceiverName webhook
-	q.Set("receiver", fmt.Sprintf("^(%s)$", OranReceiverName))
-	// Get alerts even it user silenced it
-	q.Set("silenced", "true")
-
-	u.RawQuery = q.Encode()
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
-	}
-
-	// Add auth header
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	req.Header.Add("Accept", "application/json")
-
-	// Send request
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error sending request: %w", err)
-	}
-	defer func(Body io.ReadCloser) {
-		if err := Body.Close(); err != nil {
-			slog.Error("failed to close response body during AM get call", "error", err.Error())
-		}
-	}(resp.Body)
-
-	// Read response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response: %w", err)
-	}
-
-	// Check HTTP status code
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("http error during call to alertmanager API: %d - %s", resp.StatusCode, string(body))
-	}
-
-	// Parse response as array of alerts
-	var alerts []APIAlert
-	if err := json.Unmarshal(body, &alerts); err != nil {
-		return nil, fmt.Errorf("error parsing response: %w, body: %s", err, string(body))
-	}
-
-	return alerts, nil
 }
