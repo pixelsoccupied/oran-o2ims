@@ -144,11 +144,11 @@ func updateRoutes(config map[string]interface{}) {
 	// Create oran route config.
 	oranRoute := map[string]interface{}{
 		"receiver":        OranReceiverName,
-		"group_wait":      "1s",                              // Almost immediate notification for new alerts
-		"group_interval":  "5s",                              // Quick updates for changed alerts
-		"repeat_interval": "60s",                             // Reasonable re-notification period
+		"group_wait":      "5s",                              // When a new alert group is created, Alertmanager waits this amount before sending the first notification
+		"group_interval":  "50s",                             // Controls the frequency of checks for new or changed alerts within a group
+		"repeat_interval": "4h",                              // Minimum time between repeated notifications for unchanged alerts
 		"matchers":        []string{`alertname!~"Watchdog"`}, // Exclude Watchdog alerts.
-		"continue":        true,                              // Process subsequent routes.
+		"continue":        true,                              // Process subsequent routes (which is why this needs to prepended to the routes list)
 		"group_by":        []string{"severity"},              // This can be anything (code is not dependent on how alerts reach us) but if empty it will only use the parent group_by
 	}
 
