@@ -70,6 +70,7 @@ func Serve(config *api.AlarmsServerConfig) error {
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// Recovery defer to print panic strace(runs last, placed first)
 	defer func() {
@@ -103,8 +104,8 @@ func Serve(config *api.AlarmsServerConfig) error {
 			close(closeComplete)
 		}()
 
-		// Wait for either close completion or timeout
 		// If there's panic during server init DB pool close may deadlock - handling this with timeout
+		// Wait for either close completion or timeout
 		select {
 		case <-closeComplete:
 			slog.Info("Closed DB connection")

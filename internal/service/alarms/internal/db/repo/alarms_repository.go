@@ -118,8 +118,8 @@ func (ar *AlarmsRepository) GetAlarmSubscription(ctx context.Context, id uuid.UU
 	return utils.Find[models.AlarmSubscription](ctx, ar.Db, id)
 }
 
-// UpsertAlarmEventRecord insert and updating an AlarmEventRecord.
-func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64) error {
+// UpsertAlarmEventCaaSRecord insert and updating an AlarmEventRecord.
+func (ar *AlarmsRepository) UpsertAlarmEventCaaSRecord(ctx context.Context, records []models.AlarmEventRecord, generationID int64) error {
 	if len(records) == 0 {
 		slog.Warn("No records for events upsert")
 		return nil
@@ -151,7 +151,7 @@ func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records 
 	query.Apply(values...)
 
 	// Set upsert constraints
-	// Cols here should match manage_alarm_event trigger function as needed to trigger a notification using
+	// Cols here should match 'manage_alarm_event trigger' function as needed to trigger a notification using 'should_create_data_change_event'
 	dbTags := utils.GetAllDBTagsFromStruct(m)
 	query.Apply(im.OnConflictOnConstraint(m.OnConflict()).DoUpdate(
 		im.SetExcluded(dbTags["AlarmStatus"]),
@@ -181,8 +181,8 @@ func (ar *AlarmsRepository) UpsertAlarmEventRecord(ctx context.Context, records 
 // TimeNow allows test to override time.Now
 var TimeNow = time.Now
 
-// ResolveStaleAlarmEventRecord resolve all alerts with older generation ID
-func (ar *AlarmsRepository) ResolveStaleAlarmEventRecord(ctx context.Context, generationID int) error {
+// ResolveStaleAlarmEventCaaSRecord resolve all alerts with older generation ID
+func (ar *AlarmsRepository) ResolveStaleAlarmEventCaaSRecord(ctx context.Context, generationID int) error {
 	m := models.AlarmEventRecord{}
 	dbTags := utils.GetAllDBTagsFromStruct(m)
 	var (
@@ -220,7 +220,7 @@ func (ar *AlarmsRepository) ResolveStaleAlarmEventRecord(ctx context.Context, ge
 	}
 
 	if len(records) > 0 {
-		slog.Info("Successfully resolved stale alarmeventrecords", "records", len(records))
+		slog.Info("Successfully resolved stale alarmeventrecords from CaaS", "records", len(records))
 	}
 	return nil
 }

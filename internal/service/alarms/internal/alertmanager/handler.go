@@ -46,13 +46,13 @@ func HandleAlerts(ctx context.Context, clients []infrastructure.Client, reposito
 		generationID := time.Now().UnixNano()
 
 		// Insert or update with alerts
-		if err := repository.UpsertAlarmEventRecord(ctx, aerModels, generationID); err != nil {
+		if err := repository.UpsertAlarmEventCaaSRecord(ctx, aerModels, generationID); err != nil {
 			return fmt.Errorf("failed to upsert alarm event record model: %w", err)
 		}
 
 		// Resolve stale only if source is API since `/alerts` as this step only works if we have full set of alerts
 		if source == API {
-			if err := repository.ResolveStaleAlarmEventRecord(ctx, int(generationID)); err != nil {
+			if err := repository.ResolveStaleAlarmEventCaaSRecord(ctx, int(generationID)); err != nil {
 				return fmt.Errorf("could not resolve notification: %w", err)
 			}
 		}

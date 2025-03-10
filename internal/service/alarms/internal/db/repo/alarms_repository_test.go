@@ -254,7 +254,7 @@ var _ = Describe("AlarmsRepository", func() {
 		})
 	})
 
-	Describe("UpsertAlarmEventRecord", func() {
+	Describe("UpsertAlarmEventCaaSRecord", func() {
 		When("upserting a single record", func() {
 			It("successfully upserts alarm event records", func() {
 				id := uuid.New()
@@ -278,7 +278,7 @@ var _ = Describe("AlarmsRepository", func() {
 					).
 					WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-				err := repo.UpsertAlarmEventRecord(ctx, records, 0)
+				err := repo.UpsertAlarmEventCaaSRecord(ctx, records, 0)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mock.ExpectationsWereMet()).NotTo(HaveOccurred())
 			})
@@ -320,7 +320,7 @@ var _ = Describe("AlarmsRepository", func() {
 					).
 					WillReturnResult(pgxmock.NewResult("INSERT", 2))
 
-				err := repo.UpsertAlarmEventRecord(ctx, records, 0)
+				err := repo.UpsertAlarmEventCaaSRecord(ctx, records, 0)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mock.ExpectationsWereMet()).NotTo(HaveOccurred())
 			})
@@ -328,7 +328,7 @@ var _ = Describe("AlarmsRepository", func() {
 
 		When("given an empty record list", func() {
 			It("handles empty record list", func() {
-				err := repo.UpsertAlarmEventRecord(ctx, []models.AlarmEventRecord{}, 0)
+				err := repo.UpsertAlarmEventCaaSRecord(ctx, []models.AlarmEventRecord{}, 0)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mock.ExpectationsWereMet()).NotTo(HaveOccurred())
 			})
