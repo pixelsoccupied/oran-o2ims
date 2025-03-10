@@ -141,11 +141,6 @@ func updateRoutes(config map[string]interface{}) {
 		slog.Info("Creating new main route configuration with oran receiver as default")
 	}
 
-	// This is the only global config that needs to be replaced.
-	// The child route is not override "group_by" unlike other attributes if child is an empty list
-	// TODO: Our code depends on the full list coming in at the same, check with AM team and fix this.
-	mainRoute["group_by"] = []string{}
-
 	// Create oran route config.
 	oranRoute := map[string]interface{}{
 		"receiver":        OranReceiverName,
@@ -154,7 +149,7 @@ func updateRoutes(config map[string]interface{}) {
 		"repeat_interval": "60s",                             // Reasonable re-notification period
 		"matchers":        []string{`alertname!~"Watchdog"`}, // Exclude Watchdog alerts.
 		"continue":        true,                              // Process subsequent routes.
-		// "group_by":        []string{},                        // Empty array groups all alerts together.
+		"group_by":        []string{"severity"},              // This can be anything (code is not dependent on how alerts reach us) but if empty it will only use the parent group_by
 	}
 
 	// Merge existing child routes, filtering out any previous oran routes.

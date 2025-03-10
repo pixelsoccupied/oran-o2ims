@@ -20,7 +20,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	ACMObsAMRouteName      = "alertmanager"                              // ACM's AM API host
+	ACMObsAMAuthSecretName = "observability-alertmanager-accessor-token" // ACM's AM API BEARER and ca.Crt
+)
+
 // APIAlert represents the alert structure returned by the Alertmanager API.
+// https://github.com/prometheus/alertmanager/blob/56dace4f61a0649f3ad97c2f2f9b49dc20c786bd/api/v2/openapi.yaml
 type APIAlert struct {
 	Annotations  map[string]string `json:"annotations"`
 	Labels       map[string]string `json:"labels"`
@@ -186,9 +192,9 @@ func (c *AMClient) getAlertmanagerRoute(ctx context.Context) (string, error) {
 	// Get the route
 	if err := c.k8sClient.Get(ctx, client.ObjectKey{
 		Namespace: ACMObsAMNamespace,
-		Name:      "alertmanager",
+		Name:      ACMObsAMRouteName,
 	}, route); err != nil {
-		return "", fmt.Errorf("error getting alertmanager route: %w", err)
+		return "", fmt.Errorf("error getting '%s' route: %w", ACMObsAMRouteName, err)
 	}
 
 	// Try to get host from spec
@@ -226,9 +232,9 @@ func (c *AMClient) createAlertmanagerClient(ctx context.Context) (*http.Client, 
 	var secret corev1.Secret
 	if err := c.k8sClient.Get(ctx, client.ObjectKey{
 		Namespace: ACMObsAMNamespace,
-		Name:      "observability-alertmanager-accessor-token",
+		Name:      ACMObsAMAuthSecretName,
 	}, &secret); err != nil {
-		return nil, "", fmt.Errorf("error getting token secret: %w", err)
+		return nil, "", fmt.Errorf("error getting token secret from '%s': %w", ACMObsAMAuthSecretName, err)
 	}
 
 	// Extract token
